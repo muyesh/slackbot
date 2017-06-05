@@ -54,7 +54,7 @@ class MessageDispatcher(object):
                 responded = True
                 try:
                     if category == u'timing_of':
-                        channel_name = msg['text'].split('-')[0]
+                        channel_name = msg['text'].split('#')[0]
                         channel_id = self._client.find_channel_by_name(channel_name)
                         channel = self._client.get_channel(channel_id)
                         func(channel, *args)
@@ -162,7 +162,7 @@ class MessageDispatcher(object):
             self._do_timing_action(matcher, func)
 
     def _do_timing_action(self, matcher, func):
-        keys = matcher.pattern.split('-')
+        keys = matcher.pattern.split('#')
         ch = keys[0]
         secs = keys[1]
         plugin_id = keys[2]

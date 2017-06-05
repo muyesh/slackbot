@@ -77,7 +77,7 @@ def timing_of(channel, secs, plugin_id=None):
     flags = 0
     if plugin_id == None:
         plugin_id = generate_random_id(channel)
-    plugin_id = '%s-%s-%s' % (channel,secs,plugin_id)
+    plugin_id = '%s#%s#%s' % (channel,secs,plugin_id)
     def wrapper(func):
         PluginsManager.commands['timing_of'][
                 re.compile(plugin_id, flags)] = func
