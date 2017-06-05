@@ -135,6 +135,12 @@ def help(message):
 
     # Message is sent on the channel
     # message.send('I can help everybody!')
+
+# call method at every 10 secs
+@timing_of('target_channel',10)
+def check_time(channel):
+    # Message is sent on the channel
+    channel.send('Lunch is ready!')
 ```
 
 To extract params from the message, you can use regular expression:
