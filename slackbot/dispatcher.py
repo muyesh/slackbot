@@ -40,7 +40,6 @@ class MessageDispatcher(object):
         self._pool.start()
 
     def dispatch_msg(self, msg):
-        logger.info('===>> dispatch_msg: "%s"',msg)
         category = msg[0]
         msg = msg[1]
         if not self._dispatch_msg_handler(category, msg):
@@ -55,12 +54,9 @@ class MessageDispatcher(object):
                 responded = True
                 try:
                     if category == u'timing_of':
-                        logger.info('===>> _dispatch_msg_handler: "%s"',msg)
                         channel_name = msg['text'].split('-')[0]
                         channel_id = self._client.find_channel_by_name(channel_name)
-                        logger.info('===>> channel_id: "%s"', channel_id)
                         channel = self._client.get_channel(channel_id)
-                        logger.info('===>> channel: "%s"', channel)
                         func(channel, *args)
                     else:
                         func(Message(self._client, msg), *args)
@@ -174,15 +170,10 @@ class MessageDispatcher(object):
         if plugin_id in self._timing_count:
             self._timing_count[plugin_id] = self._timing_count[plugin_id] - 1
             if self._timing_count[plugin_id] == 0:
-                logger.info('=====> "%s" reset count', plugin_id)
                 del self._timing_count[plugin_id]
                 self._pool.add_task(('timing_of', dict(text=matcher.pattern) ))
-            else:
-                logger.info('=====> "%s" count "%d"', plugin_id, self._timing_count[plugin_id])
         else:
             self._timing_count[plugin_id] = int(secs)
-            logger.info('=====> "%s" init count "%d"', plugin_id, self._timing_count[plugin_id])
-        logger.info('-----> ch:"%s" secs:"%s" id:"%s"', ch, secs, plugin_id)
 
 
     def _default_reply(self, msg):
