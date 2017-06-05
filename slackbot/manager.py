@@ -18,6 +18,7 @@ class PluginsManager(object):
     commands = {
         'respond_to': {},
         'listen_to': {},
+        'timing_of': {},
         'default_reply': {}
     }
 

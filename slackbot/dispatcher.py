@@ -20,6 +20,7 @@ class MessageDispatcher(object):
         self._client = slackclient
         self._pool = WorkerPool(self.dispatch_msg)
         self._plugins = plugins
+        self._timing_count = {}
         self._errors_to = None
         if errors_to:
             self._errors_to = self._client.find_channel_by_name(errors_to)
@@ -39,6 +40,7 @@ class MessageDispatcher(object):
         self._pool.start()
 
     def dispatch_msg(self, msg):
+        logger.info('===>> dispatch_msg: "%s"',msg)
         category = msg[0]
         msg = msg[1]
         if not self._dispatch_msg_handler(category, msg):
@@ -52,7 +54,17 @@ class MessageDispatcher(object):
             if func:
                 responded = True
                 try:
-                    func(Message(self._client, msg), *args)
+                    if category == u'timing_of':
+                        logger.info('===>> _dispatch_msg_handler: "%s"',msg)
+                        channel_name = msg['text'].split('-')[0]
+                        channel_id = self._client.find_channel_by_name(channel_name)
+                        logger.info('===>> channel_id: "%s"', channel_id)
+                        channel = self._client.get_channel(channel_id)
+                        logger.info('===>> channel: "%s"', channel)
+                        func(channel, *args)
+                    else:
+                        func(Message(self._client, msg), *args)
+
                 except:
                     logger.exception(
                         'failed to handle message %s with plugin "%s"',
@@ -72,6 +84,7 @@ class MessageDispatcher(object):
         return responded
 
     def _on_new_message(self, msg):
+        logger.info('message: %s', msg)
         # ignore edits
         subtype = msg.get('subtype', '')
         if subtype == u'message_changed':
@@ -148,6 +161,29 @@ class MessageDispatcher(object):
                     user = event['user']
                     self._client.users[user['id']] = user
             time.sleep(1)
+
+    def do_timing_actions(self):
+        for matcher,func in six.iteritems(self._plugins.commands['timing_of']):
+            self._do_timing_action(matcher, func)
+
+    def _do_timing_action(self, matcher, func):
+        keys = matcher.pattern.split('-')
+        ch = keys[0]
+        secs = keys[1]
+        plugin_id = keys[2]
+        if plugin_id in self._timing_count:
+            self._timing_count[plugin_id] = self._timing_count[plugin_id] - 1
+            if self._timing_count[plugin_id] == 0:
+                logger.info('=====> "%s" reset count', plugin_id)
+                del self._timing_count[plugin_id]
+                self._pool.add_task(('timing_of', dict(text=matcher.pattern) ))
+            else:
+                logger.info('=====> "%s" count "%d"', plugin_id, self._timing_count[plugin_id])
+        else:
+            self._timing_count[plugin_id] = int(secs)
+            logger.info('=====> "%s" init count "%d"', plugin_id, self._timing_count[plugin_id])
+        logger.info('-----> ch:"%s" secs:"%s" id:"%s"', ch, secs, plugin_id)
+
 
     def _default_reply(self, msg):
         default_reply = settings.DEFAULT_REPLY

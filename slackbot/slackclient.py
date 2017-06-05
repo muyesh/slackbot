@@ -180,3 +180,8 @@ class Channel(object):
             to_utf8(fpath),
             to_utf8(initial_comment)
         )
+
+    def send_message(self, message):
+        self._client.rtm_send_message(self._body['id'], message)
+
+

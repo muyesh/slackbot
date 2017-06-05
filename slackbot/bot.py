@@ -5,6 +5,7 @@ import importlib
 import logging
 import re
 import time
+import random
 from glob import glob
 from six.moves import _thread
 from slackbot import settings
@@ -33,6 +34,7 @@ class Bot(object):
         self._dispatcher.start()
         self._client.rtm_connect()
         _thread.start_new_thread(self._keepactive, tuple())
+        _thread.start_new_thread(self._timer_loop, tuple())
         logger.info('connected to slack RTM api')
         self._dispatcher.loop()
 
@@ -41,6 +43,13 @@ class Bot(object):
         while True:
             time.sleep(30 * 60)
             self._client.ping()
+
+    def _timer_loop(self):
+        logger.info('timer thread started')
+        while True:
+            time.sleep(1)
+            self._dispatcher.do_timing_actions()
+
 
 
 def respond_to(matchstr, flags=0):
@@ -64,6 +73,21 @@ def listen_to(matchstr, flags=0):
 
     return wrapper
 
+def timing_of(channel, secs, plugin_id=None):
+    flags = 0
+    if plugin_id == None:
+        plugin_id = generate_random_id(channel)
+    plugin_id = '%s-%s-%s' % (channel,secs,plugin_id)
+    def wrapper(func):
+        PluginsManager.commands['timing_of'][
+                re.compile(plugin_id, flags)] = func
+        logger.info('registered timing_of plugin "%s" to "%s"', func.__name__, plugin_id)
+        return func
+
+    return wrapper
+
+def generate_random_id(prefix):
+    return prefix + str(int(time.time())) + '{0:05d}'.format(random.randrange(10000))
 
 # def default_reply(matchstr=r'^.*$', flags=0):
 def default_reply(*args, **kwargs):
