@@ -80,7 +80,6 @@ class MessageDispatcher(object):
         return responded
 
     def _on_new_message(self, msg):
-        logger.info('message: %s', msg)
         # ignore edits
         subtype = msg.get('subtype', '')
         if subtype == u'message_changed':
